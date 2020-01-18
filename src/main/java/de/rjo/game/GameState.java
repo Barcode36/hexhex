@@ -4,10 +4,11 @@ import de.rjo.hex.Hexagon;
 import javafx.scene.control.Label;
 import javafx.scene.text.Font;
 
+// stores the game state for a particular hexagon
 public class GameState {
 
     private Team team = Team.NOT_SET;
-    private int nbrPlayers = 0;
+    private int nbrUnits = 0;
     private Label label; // this display the info
 
     public GameState() {
@@ -17,46 +18,60 @@ public class GameState {
     }
 
     public boolean isEmpty() {
-	return nbrPlayers == 0;
+	return nbrUnits == 0;
     }
 
-    public void setPlayers(Team team, int nbrPlayers) {
+    public void setUnits(Team team, int nbrUnits) {
 	this.team = team;
-	this.nbrPlayers = nbrPlayers;
+	this.nbrUnits = nbrUnits;
 	updateLabel();
     }
 
     private void updateLabel() {
-	this.label.setText((nbrPlayers > 0) ? "" + nbrPlayers : "");
+	this.label.setText((nbrUnits > 0) ? "" + nbrUnits : "");
     }
 
     public Team getTeam() {
 	return team;
     }
 
-    public int getNbrPlayers() {
-	return nbrPlayers;
+    public int getNbrUnits() {
+	return nbrUnits;
     }
 
     public Label getLabel() {
 	return label;
     }
 
-    public void increment() {
-	if (nbrPlayers != 0) {
-	    nbrPlayers++;
+    public void increment(int nbr) {
+	if (nbrUnits != 0) {
+	    nbrUnits += nbr;
 	    updateLabel();
 	}
     }
 
-    public void decrement(final Hexagon hex) {
-	if (nbrPlayers > 0) {
-	    nbrPlayers--;
+    public void decrement(final Hexagon hex, int nbr) {
+	if (nbrUnits >= nbr) {
+	    nbrUnits -= nbr;
 	    updateLabel();
-	    if (nbrPlayers == 0) {
+	    if (nbrUnits == 0) {
 		team = Team.NOT_SET;
 		hex.setColour(Team.NOT_SET.getColor());
 	    }
 	}
+    }
+
+    /**
+     * can the given number of units be removed from this hex?
+     */
+    public boolean canMoveFrom(int nbr) {
+	return nbrUnits >= nbr;
+    }
+
+    /**
+     * can a move of the given player be made to this hex?
+     */
+    public boolean canMoveTo(Team player) {
+	return team == Team.NOT_SET || team == player;
     }
 }

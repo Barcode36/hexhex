@@ -14,6 +14,9 @@ public class Main extends Application {
 
     final int sizeOfHexagons = 50;
 
+    private final static int widthOfMainPane = 850;
+    private final static int heightOfMainPane = 850;
+
     private Hexagon[][] board;
     private Game game;
 
@@ -24,12 +27,12 @@ public class Main extends Application {
 
 	Hexagon.size = sizeOfHexagons;
 	Hexagon.X_OFFSET = 100;
-	Hexagon.Y_OFFSET = 100;
-
-	initGame();
-	initBoard();
+	Hexagon.Y_OFFSET = 130;
 
 	Pane pane = new Pane();
+	initGame(pane);
+	initBoard();
+
 	for (int row = 0; row < GameConstants.nbrRows; row++) {
 	    for (int col = 0; col < GameConstants.nbrCols; col++) {
 		game.getState()[row][col].getLabel().setLayoutX(board[row][col].getPointAtNorthWest().x + 10);
@@ -38,6 +41,7 @@ public class Main extends Application {
 		pane.getChildren().addAll(board[row][col], game.getState()[row][col].getLabel());
 	    }
 	}
+
 	pane.getChildren().add(game.getLineToNeighbour());
 	// this tracks the mouse position
 	pane.addEventFilter(MouseEvent.MOUSE_MOVED, event -> this.mousePosition = event);
@@ -48,7 +52,7 @@ public class Main extends Application {
 	sp.setContent(pane);
 	sp.setPannable(false); // set true for panning
 
-	Scene scene = new Scene(sp, 850, 800);
+	Scene scene = new Scene(sp, widthOfMainPane, heightOfMainPane);
 	scene.addEventFilter(KeyEvent.KEY_PRESSED, event -> game.processKey(event.getCode()));
 
 //	    System.out.println("Pressed: " + event.getCode() + ",    " + "(x: " + mousePosition.getX() + ", y: "
@@ -63,8 +67,8 @@ public class Main extends Application {
 	stage.show();
     }
 
-    private void initGame() {
-	game = new Game(GameConstants.nbrRows, GameConstants.nbrCols);
+    private void initGame(Pane pane) {
+	game = new Game(GameConstants.nbrRows, GameConstants.nbrCols, pane);
     }
 
     private void initBoard() {

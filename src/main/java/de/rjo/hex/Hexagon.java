@@ -18,7 +18,7 @@ import javafx.scene.shape.Polygon;
  */
 public class Hexagon extends Polygon {
     public static int size = 50;
-    public static /* final */ int X_OFFSET = 100;
+    public static /* final */ int X_OFFSET = 100; // defaults -- get set in Main
     public static /* final */ int Y_OFFSET = 100;
 
     private static final double verticalDistanceFactor = 0.75;

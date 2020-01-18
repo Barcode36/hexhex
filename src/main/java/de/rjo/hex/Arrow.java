@@ -21,6 +21,10 @@ public class Arrow extends Group {
 
     private Arrow(Line line, Polygon arrow) {
 	super(line, arrow);
+
+	line.setMouseTransparent(true);
+	arrow.setMouseTransparent(true);
+
 	this.line = line;
 	InvalidationListener updater = o -> {
 	    double ex = getEndX();
