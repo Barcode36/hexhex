@@ -12,10 +12,13 @@ import javafx.stage.Stage;
 
 public class Main extends Application {
 
-    final int sizeOfHexagons = 50;
+    private static final String GAMEPANE_STYLE_CLASS = "gamepane";
 
-    private final static int widthOfMainPane = 850;
-    private final static int heightOfMainPane = 850;
+    final int sizeOfHexagons = GameProperties.instance().getPropertyInt(Hexagon.HEXAGON_SIZE);
+
+    private final static int widthOfMainPane = GameProperties.instance().getPropertyInt(GameProperties.MAIN_PANE_WIDTH);
+    private final static int heightOfMainPane = GameProperties.instance()
+	    .getPropertyInt(GameProperties.MAIN_PANE_HEIGHT);
 
     private Hexagon[][] board;
     private Game game;
@@ -26,15 +29,15 @@ public class Main extends Application {
     public void start(Stage stage) {
 
 	Hexagon.size = sizeOfHexagons;
-	Hexagon.X_OFFSET = 100;
-	Hexagon.Y_OFFSET = 130;
+	Hexagon.X_OFFSET = GameProperties.instance().getPropertyInt(Hexagon.HEXAGON_X_OFFSET);
+	Hexagon.Y_OFFSET = GameProperties.instance().getPropertyInt(Hexagon.HEXAGON_Y_OFFSET);
 
 	Pane pane = new Pane();
 	initGame(pane);
 	initBoard();
 
-	for (int row = 0; row < GameConstants.nbrRows; row++) {
-	    for (int col = 0; col < GameConstants.nbrCols; col++) {
+	for (int row = 0; row < GameProperties.instance().getPropertyInt(GameProperties.NBR_ROWS); row++) {
+	    for (int col = 0; col < GameProperties.instance().getPropertyInt(GameProperties.NBR_COLS); col++) {
 		game.getState()[row][col].getLabel().setLayoutX(board[row][col].getPointAtNorthWest().x + 10);
 		game.getState()[row][col].getLabel().setLayoutY(board[row][col].getPointAtNorthWest().y);
 
@@ -51,8 +54,11 @@ public class Main extends Application {
 	sp.setVbarPolicy(ScrollBarPolicy.NEVER);
 	sp.setContent(pane);
 	sp.setPannable(false); // set true for panning
+	sp.getStyleClass().clear();
+	sp.getStyleClass().add(GAMEPANE_STYLE_CLASS);
 
 	Scene scene = new Scene(sp, widthOfMainPane, heightOfMainPane);
+	scene.getStylesheets().add("/de/rjo/game/hexhex.css");
 	scene.addEventFilter(KeyEvent.KEY_PRESSED, event -> game.processKey(event.getCode()));
 
 //	    System.out.println("Pressed: " + event.getCode() + ",    " + "(x: " + mousePosition.getX() + ", y: "
@@ -68,15 +74,17 @@ public class Main extends Application {
     }
 
     private void initGame(Pane pane) {
-	game = new Game(GameConstants.nbrRows, GameConstants.nbrCols, pane);
+	game = new Game(GameProperties.instance().getPropertyInt(GameProperties.NBR_ROWS),
+		GameProperties.instance().getPropertyInt(GameProperties.NBR_COLS), pane);
     }
 
     private void initBoard() {
-	board = new Hexagon[GameConstants.nbrRows][GameConstants.nbrCols];
+	board = new Hexagon[GameProperties.instance().getPropertyInt(GameProperties.NBR_ROWS)][GameProperties.instance()
+		.getPropertyInt(GameProperties.NBR_COLS)];
 
-	for (int row = 0; row < GameConstants.nbrRows; row++) {
-	    for (int col = 0; col < GameConstants.nbrCols; col++) {
-		board[row][col] = new Hexagon(row, col, game.getState()[row][col].getTeam().getColor());
+	for (int row = 0; row < GameProperties.instance().getPropertyInt(GameProperties.NBR_ROWS); row++) {
+	    for (int col = 0; col < GameProperties.instance().getPropertyInt(GameProperties.NBR_COLS); col++) {
+		board[row][col] = new Hexagon(row, col, game.getState()[row][col].getTeam().getStyleClass());
 
 		board[row][col].setOnMouseClicked(mevt -> {
 		    game.onMouseClicked((Hexagon) mevt.getSource());

@@ -17,6 +17,12 @@ import javafx.scene.shape.Polygon;
  * vertical distance between adjacent hexagon centers is "height" * 3/4.
  */
 public class Hexagon extends Polygon {
+
+    // property names
+    public static final String HEXAGON_X_OFFSET = "hexagon_X_offset";
+    public static final String HEXAGON_Y_OFFSET = "hexagon_Y_offset";
+    public static final String HEXAGON_SIZE = "hexagon_size";
+
     public static int size = 50;
     public static /* final */ int X_OFFSET = 100; // defaults -- get set in Main
     public static /* final */ int Y_OFFSET = 100;
@@ -26,13 +32,13 @@ public class Hexagon extends Polygon {
     final double width = Math.sqrt(3) * size; // sqrt(3) == sin(60°)
     final double height = 2 * size;
 
-    private Color fillColor;
+    private String styleClass;
     private final GridCoordinate gridCoordinates;
     private final double centreX;
     private final double centreY;
 
-    public Hexagon(int row, int col, Color fillColor) {
-	this.fillColor = fillColor;
+    public Hexagon(int row, int col, String styleClass) {
+	this.styleClass = styleClass;
 	this.gridCoordinates = new GridCoordinate(row, col);
 	Double[] points = new Double[12];
 	centreX = centreX(gridCoordinates);
@@ -43,9 +49,8 @@ public class Hexagon extends Polygon {
 	    points[i * 2 + 1] = point.y;
 	}
 	getPoints().addAll(points);
-	setFill(fillColor);
+	changeStyleClass(styleClass);
 	setStroke(Color.BLACK);
-
     }
 
     /**
@@ -115,13 +120,13 @@ public class Hexagon extends Polygon {
 
     // reset colour to what it was before
     public void resetColour() {
-	setFill(fillColor);
+	changeStyleClass(styleClass);
     }
 
     // set colour to required color
-    public void setColour(Color color) {
-	fillColor = color;
-	setFill(fillColor);
+    public void setStyleClass(String styleClass) {
+	this.styleClass = styleClass;
+	changeStyleClass(styleClass);
     }
 
     public Point2D.Double getPointAtNorthWest() {
@@ -138,5 +143,10 @@ public class Hexagon extends Polygon {
 
     public double getCentreY() {
 	return centreY;
+    }
+
+    public void changeStyleClass(String styleClass) {
+	this.getStyleClass().clear();
+	this.getStyleClass().add(styleClass);
     }
 }

@@ -56,7 +56,7 @@ public class GameState {
 	    updateLabel();
 	    if (nbrUnits == 0) {
 		team = Team.NOT_SET;
-		hex.setColour(Team.NOT_SET.getColor());
+		hex.setStyleClass(Team.NOT_SET.getStyleClass());
 	    }
 	}
     }

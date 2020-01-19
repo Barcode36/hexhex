@@ -1,0 +1,52 @@
+/* https://docs.oracle.com/javafx/2/api/javafx/scene/doc-files/cssref.html */
+
+root{
+    -fx-font-size: 16pt;
+    -fx-font-family: "Courier New";
+    -fx-base: rgb(132, 145, 47);
+    -fx-background: rgb(225, 228, 203);
+}
+
+/* style for the game pane */
+.gamepane {
+	-fx-background-color: rgb(225, 228, 203);
+}
+
+/* .button{ */
+/*     -fx-text-fill: rgb(49, 89, 23); */
+/*     -fx-border-color: rgb(49, 89, 23); */
+/*     -fx-border-radius: 5; */
+/*     -fx-padding: 3 6 6 6; */
+
+/*         -fx-font: 16px "Serif"; */
+/*     -fx-padding: 10; */
+/*     -fx-background-color: #CCFF99; */
+/* } */
+
+/* style classes used for the 'player to move' rectangle */
+.team-notset {
+	-fx-fill: #FFFFFF;
+}
+.team-blue {
+	-fx-fill: #ADD8E6;
+}
+
+.team-red {
+	-fx-fill: #FF0000;
+}
+
+/* when mouse hovers over hex */
+.entered {
+	-fx-fill: #FF69B4; 
+}
+
+/* when a hex is selected, and mouse hovers over a neighbour */
+.neighbour {
+	-fx-fill: #FFB6C1; 
+}
+
+/* a hex is selected */
+.selected {
+	-fx-fill: #408420;
+}
+

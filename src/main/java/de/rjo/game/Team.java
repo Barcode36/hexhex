@@ -1,18 +1,16 @@
 package de.rjo.game;
 
-import javafx.scene.paint.Color;
-
 public enum Team {
 
-    NOT_SET(Color.WHITE), RED(Color.RED), BLUE(Color.LIGHTBLUE);
+    NOT_SET("team-notset"), RED("team-red"), BLUE("team-blue");
 
-    private Color color;
+    private String styleClass;
 
-    private Team(Color color) {
-	this.color = color;
+    private Team(String styleClass) {
+	this.styleClass = styleClass;
     }
 
-    public Color getColor() {
-	return color;
+    public String getStyleClass() {
+	return styleClass;
     }
 }

@@ -10,10 +10,13 @@ import javafx.scene.control.Label;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Pane;
-import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 
 public class Game {
+
+    private static final String HOVERING_STYLE_CLASS = "entered"; // for when the mouse hovers over a hex
+    private static final String SELECTED_STYLE_CLASS = "selected"; // a selected hex
+    private static final String NEIGHBOUR_STYLE_CLASS = "neighbour"; // mouse hovers over a neighbour of a selected hex
 
     private GameState[][] state;
 
@@ -41,13 +44,14 @@ public class Game {
 
 	for (Team team : new Team[] { Team.BLUE, Team.RED }) {
 	    var hexesChosen = 0;
-	    while (hexesChosen != GameConstants.nbrStartHexes) {
+	    while (hexesChosen != GameProperties.instance().getPropertyInt(GameProperties.NBR_START_HEXES)) {
 		var chosenHex = rnd.nextInt(maxHexes);
 		var x = chosenHex / nbrCols;
 		var y = chosenHex % nbrCols;
 //		System.out.println(chosenHex + " " + x + "   " + y);
 		if (state[x][y].isEmpty()) {
-		    state[x][y].setUnits(team, rnd.nextInt(GameConstants.maxPlayersInHex) + 1);
+		    state[x][y].setUnits(team,
+			    rnd.nextInt(GameProperties.instance().getPropertyInt(GameProperties.MAX_UNITS_IN_HEX)) + 1);
 		    hexesChosen++;
 		}
 	    }
@@ -65,7 +69,7 @@ public class Game {
 	playerGridPane.setHgap(5);
 
 	playerToMoveRectangle = new Rectangle(20, 20, 80, 20);
-	playerToMoveRectangle.setFill(playerToMove.getColor());
+	setPlayerToMoveStyle(playerToMove);
 
 	var playerToMoveLabel = new Label("player to move");
 
@@ -87,6 +91,11 @@ public class Game {
 	pane.getChildren().addAll(/* lineToNeighbour, */ playerGridPane);
     }
 
+    private void setPlayerToMoveStyle(Team playerToMove) {
+	playerToMoveRectangle.getStyleClass().clear();
+	playerToMoveRectangle.getStyleClass().add(playerToMove.getStyleClass());
+    }
+
     private void doEndOfGo() {
 	if (currentlySelected != null) {
 	    onMouseClicked(currentlySelected);// deselect the current hex
@@ -105,7 +114,7 @@ public class Game {
 	} else {
 	    playerToMove = Team.BLUE;
 	}
-	playerToMoveRectangle.setFill(playerToMove.getColor());
+	setPlayerToMoveStyle(playerToMove);
     }
 
     public Arrow getLineToNeighbour() {
@@ -121,7 +130,9 @@ public class Game {
 
     public void setCurrentlySelected(Hexagon currentlySelected) {
 	this.currentlySelected = currentlySelected;
-	this.neighbours = currentlySelected.getNeighbours(GameConstants.nbrRows, GameConstants.nbrCols);
+	this.neighbours = currentlySelected.getNeighbours(
+		GameProperties.instance().getPropertyInt(GameProperties.NBR_ROWS),
+		GameProperties.instance().getPropertyInt(GameProperties.NBR_COLS));
     }
 
     public Hexagon getCurrentlySelected() {
@@ -176,15 +187,16 @@ public class Game {
 	var originState = state[originHex.getGridCoordinates().getRow()][originHex.getGridCoordinates().getColumn()];
 	var targetState = state[targetHex.getGridCoordinates().getRow()][targetHex.getGridCoordinates().getColumn()];
 	if (originState.canMoveFrom(nbrUnits) && targetState.canMoveTo(playerToMove)) {
-	    System.out.println("move!");
 	    originState.decrement(originHex, nbrUnits);
 
 	    if (targetState.isEmpty()) {
 		targetState.setUnits(playerToMove, nbrUnits);
-		targetHex.setColour(playerToMove.getColor());
+		targetHex.setStyleClass(playerToMove.getStyleClass());
 	    } else {
 		targetState.increment(nbrUnits);
 	    }
+
+	    deselectHex(originHex);
 	}
     }
 
@@ -202,7 +214,7 @@ public class Game {
     public void onMouseEntered(Hexagon hex) {
 	// if no hex as yet selected, colour it differently
 	if (currentlySelected == null) {
-	    hex.setFill(Color.HOTPINK);
+	    hex.changeStyleClass(HOVERING_STYLE_CLASS);
 	} else {
 	    // if a neighbour, colour differently and draw an arrow; otherwise no action
 	    for (var neighbour : neighbours) {
@@ -210,7 +222,7 @@ public class Game {
 		    if (hex.equals(currentlyHoveredNeighbour)) {
 			// no action, we were hovering here already
 		    } else {
-			hex.setFill(Color.LIGHTPINK);
+			hex.changeStyleClass(NEIGHBOUR_STYLE_CLASS);
 			lineToNeighbour.setStartX(currentlySelected.getCentreX());
 			lineToNeighbour.setStartY(currentlySelected.getCentreY());
 			lineToNeighbour.setEndX(hex.getCentreX());
@@ -238,8 +250,7 @@ public class Game {
      */
     public void onMouseClicked(Hexagon hex) {
 	if (hex == currentlySelected) {
-	    hex.resetColour();
-	    currentlySelected = null;
+	    deselectHex(hex);
 	} else {
 	    // can only select a hex belonging to the current player.
 	    if (state[hex.getGridCoordinates().getRow()][hex.getGridCoordinates().getColumn()]
@@ -248,11 +259,18 @@ public class Game {
 		    currentlySelected.resetColour();
 		}
 		setCurrentlySelected(hex);
-		hex.setFill(Color.DARKGREEN);
+		hex.changeStyleClass(SELECTED_STYLE_CLASS);
 	    }
 	    lineToNeighbour.setVisible(false);
 	}
 	currentlyHoveredNeighbour = null;
+    }
+
+    private void deselectHex(Hexagon hex) {
+	hex.resetColour();
+	currentlySelected = null;
+	currentlyHoveredNeighbour = null;
+	lineToNeighbour.setVisible(false);
     }
 
 }
