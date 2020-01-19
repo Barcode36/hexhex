@@ -5,11 +5,13 @@ import java.util.Random;
 import de.rjo.hex.Arrow;
 import de.rjo.hex.GridCoordinate;
 import de.rjo.hex.Hexagon;
+import javafx.scene.Group;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Pane;
+import javafx.scene.layout.VBox;
 import javafx.scene.shape.Rectangle;
 
 public class Game {
@@ -22,6 +24,10 @@ public class Game {
 
     private int roundNbr;
     private Label roundNbrLabel;
+    private Label scoreLabel;
+    private Label energyLabel[];
+    private int[] scores;
+    private Energy[] energy;
 
     private Rectangle playerToMoveRectangle;
     private Team playerToMove;
@@ -63,15 +69,11 @@ public class Game {
 
 	playerToMove = Team.BLUE;
 
-	var playerGridPane = new GridPane();
-	playerGridPane.setLayoutX(20);
-	playerGridPane.setLayoutY(20);
-	playerGridPane.setHgap(5);
-
-	playerToMoveRectangle = new Rectangle(20, 20, 80, 20);
+	playerToMoveRectangle = new Rectangle(80, 20);
 	setPlayerToMoveStyle(playerToMove);
 
 	var playerToMoveLabel = new Label("player to move");
+	Group playerToMoveGroup = new Group(playerToMoveRectangle, playerToMoveLabel);
 
 	var endOfGoButton = new Button("end of go");
 	endOfGoButton.setOnMouseClicked(evt -> doEndOfGo());
@@ -79,12 +81,31 @@ public class Game {
 	roundNbr = 1;
 	roundNbrLabel = new Label("Round: " + roundNbr);
 
-	GridPane.setConstraints(roundNbrLabel, 0, 0);
-	GridPane.setConstraints(playerToMoveLabel, 0, 1);
-	GridPane.setConstraints(playerToMoveRectangle, 0, 1);
-	GridPane.setConstraints(endOfGoButton, 1, 0);
+	scores = new int[2];
+	scoreLabel = new Label(scores[0] + " - " + scores[1]);
 
-	playerGridPane.getChildren().addAll(roundNbrLabel, playerToMoveRectangle, playerToMoveLabel, endOfGoButton);
+	energy = new Energy[2];
+	var energyGridPane = new GridPane();
+	energyGridPane.getStyleClass().add("energyBox");
+	energyLabel = new Label[2];
+	for (Team t : new Team[] { Team.BLUE, Team.RED }) {
+	    energy[t.ordinal()] = new Energy(GameProperties.instance().getPropertyInt(GameProperties.INITIAL_ENERGY));
+	    energyLabel[t.ordinal()] = new Label(t.getName() + ":\t\t" + energy[t.ordinal()].getEnergy());
+	}
+	energyGridPane.add(energyLabel[Team.BLUE.ordinal()], 0, 0);
+	energyGridPane.add(energyLabel[Team.RED.ordinal()], 0, 1);
+
+	var playerGridPane = new GridPane();
+	playerGridPane.setLayoutX(20);
+	playerGridPane.setLayoutY(20);
+	playerGridPane.setHgap(5);
+
+	VBox roundinfoBox = new VBox(roundNbrLabel, playerToMoveGroup, scoreLabel);
+	roundinfoBox.getStyleClass().add("infoBox");
+
+	playerGridPane.add(roundinfoBox, 0, 0);
+	playerGridPane.add(energyGridPane, 1, 0);
+	playerGridPane.add(endOfGoButton, 2, 0);
 
 	// adding lineToNeighbour here (instead of via Main) means the arrow/line does
 	// not get displayed!?

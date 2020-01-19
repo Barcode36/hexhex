@@ -17,6 +17,8 @@ public class GameProperties extends Properties {
     public static final String NBR_START_HEXES = "nbrStartHexes";
     public static final String MAX_UNITS_IN_HEX = "maxUnitsInHex";
 
+    public static final String INITIAL_ENERGY = "initialEnergy";
+
     private static GameProperties instance = new GameProperties();
 
     private GameProperties() {
