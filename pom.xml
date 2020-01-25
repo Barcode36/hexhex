@@ -4,38 +4,52 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>de.rjo</groupId>
 	<artifactId>hexhex</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>0.1-SNAPSHOT</version>
+	<packaging>pom</packaging>
+
+	<modules>
+		<module>de.rjo.hex.game</module>
+		<module>de.rjo.hex.framework</module>
+	</modules>
+
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<javafx.version>11.0.2</javafx.version>
+			<!--	<javafx.path>/c/Users/rich/java/javafx-sdk-${javafx.version}/lib</javafx.path>-->
+	</properties>
 
 	<build>
 		<plugins>
-
-			<plugin>
-				<groupId>org.openjfx</groupId>
-				<artifactId>javafx-maven-plugin</artifactId>
-				<version>0.0.3</version>
-				<configuration>
-					<mainClass>de.rjo.game.Main</mainClass>
-						<!--<mainClass>test.TextInCircle</mainClass>-->
-				</configuration>
-			</plugin>
-
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.2</version>
+				<version>3.8.1</version>
 				<configuration>
-					<source>11</source>
-					<target>11</target>
+					<release>11</release>
+					<!--
+					<fork>true</fork>
+					<compilerArgs>
+						<arg>- -module-path</arg>
+						<arg>${javafx.path}</arg>
+					</compilerArgs>
+						-->
 				</configuration>
 			</plugin>
 		</plugins>
 	</build>
 
-	<dependencies>
-		<dependency>
-			<groupId>org.openjfx</groupId>
-			<artifactId>javafx-controls</artifactId>
-			<version>13</version>
-		</dependency>
-	</dependencies>
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>org.openjfx</groupId>
+				<artifactId>javafx-controls</artifactId>
+				<version>${javafx.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.openjfx</groupId>
+				<artifactId>javafx-graphics</artifactId>
+				<version>${javafx.version}</version>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
 </project>

@@ -1,4 +1,4 @@
 loadsa  hexagons
 
-mvn clean javafx:run
+Start with: (cd de.rjo.hex.game/ && mvn javafx:run)
 
