@@ -5,6 +5,11 @@ import java.util.Random;
 import de.rjo.hex.Arrow;
 import de.rjo.hex.GridCoordinate;
 import de.rjo.hex.Hexagon;
+import javafx.beans.binding.Bindings;
+import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
 import javafx.scene.Group;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -20,14 +25,17 @@ public class Game {
     private static final String SELECTED_STYLE_CLASS = "selected"; // a selected hex
     private static final String NEIGHBOUR_STYLE_CLASS = "neighbour"; // mouse hovers over a neighbour of a selected hex
 
+    // some messages for the info label
+    private static final String INFO_NOT_ENOUGH_UNITS = "not enough units";
+    private static final String INFO_WRONG_TEAM = "wrong team, cannot move there";
+    private static final String INFO_NOT_ENOUGH_ENERGY = "not enough energy";
+
     private GameState[][] state;
 
-    private int roundNbr;
-    private Label roundNbrLabel;
-    private Label scoreLabel;
-    private Label energyLabel[];
-    private int[] scores;
+    private IntegerProperty roundNbr;
+    private IntegerProperty[] scores;
     private Energy[] energy;
+    private StringProperty infoText;
 
     private Rectangle playerToMoveRectangle;
     private Team playerToMove;
@@ -35,6 +43,10 @@ public class Game {
     private Hexagon currentlyHoveredNeighbour; // which neighbour is currently being hovered over
     private GridCoordinate[] neighbours;
     private Arrow lineToNeighbour;
+
+    private static interface Rules {
+	int ENERGY_TO_MOVE_ONE_UNIT = 5; // how much energy is required to move one unit one hex
+    }
 
     public Game(int nbrRows, int nbrCols, Pane pane) {
 	state = new GameState[nbrRows][nbrCols];
@@ -78,19 +90,25 @@ public class Game {
 	var endOfGoButton = new Button("end of go");
 	endOfGoButton.setOnMouseClicked(evt -> doEndOfGo());
 
-	roundNbr = 1;
-	roundNbrLabel = new Label("Round: " + roundNbr);
+	roundNbr = new SimpleIntegerProperty(1);
+	var roundNbrLabel = new Label();
+	roundNbrLabel.textProperty().bind(Bindings.format("%s%s", "Round: ", roundNbr.asString()));
 
-	scores = new int[2];
-	scoreLabel = new Label(scores[0] + " - " + scores[1]);
+	scores = new IntegerProperty[2];
+	scores[0] = new SimpleIntegerProperty(0);
+	scores[1] = new SimpleIntegerProperty(0);
+	var scoreLabel = new Label();
+	scoreLabel.textProperty().bind(Bindings.format("%s-%s", scores[0].asString(), scores[1].asString()));
 
 	energy = new Energy[2];
 	var energyGridPane = new GridPane();
 	energyGridPane.getStyleClass().add("energyBox");
-	energyLabel = new Label[2];
+	var energyLabel = new Label[2];
 	for (Team t : new Team[] { Team.BLUE, Team.RED }) {
 	    energy[t.ordinal()] = new Energy(GameProperties.instance().getPropertyInt(GameProperties.INITIAL_ENERGY));
-	    energyLabel[t.ordinal()] = new Label(t.getName() + ":\t\t" + energy[t.ordinal()].getEnergy());
+	    energyLabel[t.ordinal()] = new Label();
+	    energyLabel[t.ordinal()].textProperty()
+		    .bind(Bindings.format("%s:\t\t%s", t.getName(), energy[t.ordinal()].getEnergy().asString()));
 	}
 	energyGridPane.add(energyLabel[Team.BLUE.ordinal()], 0, 0);
 	energyGridPane.add(energyLabel[Team.RED.ordinal()], 0, 1);
@@ -103,9 +121,14 @@ public class Game {
 	VBox roundinfoBox = new VBox(roundNbrLabel, playerToMoveGroup, scoreLabel);
 	roundinfoBox.getStyleClass().add("infoBox");
 
+	infoText = new SimpleStringProperty("");
+	var infoLabel = new Label();
+	infoLabel.textProperty().bind(infoText);
+
 	playerGridPane.add(roundinfoBox, 0, 0);
 	playerGridPane.add(energyGridPane, 1, 0);
 	playerGridPane.add(endOfGoButton, 2, 0);
+	playerGridPane.add(infoLabel, 3, 0);
 
 	// adding lineToNeighbour here (instead of via Main) means the arrow/line does
 	// not get displayed!?
@@ -123,6 +146,7 @@ public class Game {
 	}
 	changePlayerToMove();
 	updateRound();
+	infoText.set("");
     }
 
     public GameState[][] getState() {
@@ -144,8 +168,7 @@ public class Game {
 
     private void updateRound() {
 	if (playerToMove == Team.BLUE) {
-	    roundNbr++;
-	    roundNbrLabel.setText("Round: " + roundNbr);
+	    roundNbr.set(roundNbr.get() + 1); // add(1) doesn't work as expected
 	}
     }
 
@@ -207,17 +230,30 @@ public class Game {
     private void moveToNeighbour(Hexagon originHex, Hexagon targetHex, int nbrUnits) {
 	var originState = state[originHex.getGridCoordinates().getRow()][originHex.getGridCoordinates().getColumn()];
 	var targetState = state[targetHex.getGridCoordinates().getRow()][targetHex.getGridCoordinates().getColumn()];
-	if (originState.canMoveFrom(nbrUnits) && targetState.canMoveTo(playerToMove)) {
-	    originState.decrement(originHex, nbrUnits);
 
-	    if (targetState.isEmpty()) {
-		targetState.setUnits(playerToMove, nbrUnits);
-		targetHex.setStyleClass(playerToMove.getStyleClass());
+	// check if move allowed
+	if (!originState.canMoveFrom(nbrUnits)) {
+	    infoText.set(INFO_NOT_ENOUGH_UNITS);
+	} else if (!targetState.canMoveTo(playerToMove)) {
+	    infoText.set(INFO_WRONG_TEAM);
+	} else {
+	    var energyRequired = Rules.ENERGY_TO_MOVE_ONE_UNIT * nbrUnits;
+	    if (energyRequired > energy[playerToMove.ordinal()].getEnergy().get()) {
+		infoText.set(INFO_NOT_ENOUGH_ENERGY);
 	    } else {
-		targetState.increment(nbrUnits);
-	    }
+		originState.decrement(originHex, nbrUnits);
 
-	    deselectHex(originHex);
+		if (targetState.isEmpty()) {
+		    targetState.setUnits(playerToMove, nbrUnits);
+		    targetHex.setStyleClass(playerToMove.getStyleClass());
+		} else {
+		    targetState.increment(nbrUnits);
+		}
+
+		deselectHex(originHex);
+		infoText.set("");
+		energy[playerToMove.ordinal()].reduce(energyRequired);
+	    }
 	}
     }
 
