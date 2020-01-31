@@ -35,6 +35,7 @@ public class Main extends Application {
 	Pane pane = new Pane();
 	initGame(pane);
 	initBoard();
+	game.setBoard(board);
 
 	for (int row = 0; row < GameProperties.instance().getPropertyInt(GameProperties.NBR_ROWS); row++) {
 	    for (int col = 0; col < GameProperties.instance().getPropertyInt(GameProperties.NBR_COLS); col++) {

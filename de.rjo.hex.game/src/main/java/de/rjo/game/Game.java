@@ -1,6 +1,8 @@
 package de.rjo.game;
 
+import java.util.Arrays;
 import java.util.Random;
+import java.util.stream.Stream;
 
 import de.rjo.hex.Arrow;
 import de.rjo.hex.GridCoordinate;
@@ -31,6 +33,7 @@ public class Game {
     private static final String INFO_NOT_ENOUGH_ENERGY = "not enough energy";
 
     private GameState[][] state;
+    private Hexagon[][] board;
 
     private IntegerProperty roundNbr;
     private IntegerProperty[] scores;
@@ -46,6 +49,7 @@ public class Game {
 
     private static interface Rules {
 	int ENERGY_TO_MOVE_ONE_UNIT = 5; // how much energy is required to move one unit one hex
+	int ENERGY_GAINED_PER_OCCUPIED_HEX = 10; // how much energy is gained per occupied hex (at end of round)
     }
 
     public Game(int nbrRows, int nbrCols, Pane pane) {
@@ -107,8 +111,10 @@ public class Game {
 	for (Team t : new Team[] { Team.BLUE, Team.RED }) {
 	    energy[t.ordinal()] = new Energy(GameProperties.instance().getPropertyInt(GameProperties.INITIAL_ENERGY));
 	    energyLabel[t.ordinal()] = new Label();
+	    energyLabel[t.ordinal()].getStyleClass().add("energyLabel");
 	    energyLabel[t.ordinal()].textProperty()
-		    .bind(Bindings.format("%s:\t\t%s", t.getName(), energy[t.ordinal()].getEnergy().asString()));
+		    .bind(Bindings.format("%s:\t\t%3s", t.getName(), energy[t.ordinal()].getEnergy().asString("%3s")));
+
 	}
 	energyGridPane.add(energyLabel[Team.BLUE.ordinal()], 0, 0);
 	energyGridPane.add(energyLabel[Team.RED.ordinal()], 0, 1);
@@ -144,9 +150,9 @@ public class Game {
 	if (currentlySelected != null) {
 	    onMouseClicked(currentlySelected);// deselect the current hex
 	}
-	changePlayerToMove();
-	updateRound();
 	infoText.set("");
+	changePlayerToMove();
+	nextRound();
     }
 
     public GameState[][] getState() {
@@ -166,10 +172,31 @@ public class Game {
 	return lineToNeighbour;
     }
 
-    private void updateRound() {
+    private void nextRound() {
 	if (playerToMove == Team.BLUE) {
 	    roundNbr.set(roundNbr.get() + 1); // add(1) doesn't work as expected
+	    boostEnergyLevels();
 	}
+    }
+
+    private void boostEnergyLevels() {
+	// new energy levels are calulated at the end of each round
+	String info = "";
+	for (Team team : new Team[] { Team.BLUE, Team.RED }) {
+	    var energyGained = streamGameState().filter(hex -> hex.getTeam() == team).count()
+		    * Rules.ENERGY_GAINED_PER_OCCUPIED_HEX;
+	    energy[team.ordinal()].increase((int) energyGained);
+	    info += " +" + energyGained + " for team " + team.getName() + ";";
+	}
+	infoText.set(info);
+    }
+
+    private Stream<Hexagon> streamBoardHexagons() {
+	return Arrays.stream(board).flatMap(Arrays::stream);
+    }
+
+    private Stream<GameState> streamGameState() {
+	return Arrays.stream(state).flatMap(Arrays::stream);
     }
 
     public void setCurrentlySelected(Hexagon currentlySelected) {
@@ -328,6 +355,10 @@ public class Game {
 	currentlySelected = null;
 	currentlyHoveredNeighbour = null;
 	lineToNeighbour.setVisible(false);
+    }
+
+    public void setBoard(Hexagon[][] board) {
+	this.board = board;
     }
 
 }
