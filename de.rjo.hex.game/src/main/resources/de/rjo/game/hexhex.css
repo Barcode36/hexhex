@@ -1,4 +1,5 @@
 /* https://docs.oracle.com/javafx/2/api/javafx/scene/doc-files/cssref.html */
+/* colours: https://www.w3schools.com/cssref/css_colors.asp */
 
 root{
     -fx-font-size: 24pt;
@@ -18,9 +19,21 @@ root{
 /* this is the box displaying the energy levels */
 .energyBox {
 	-fx-alignment: center;
-	-fx-border-color: rgb(29, 94, 201);
-	-fx-border-style: dashed;
-	-fx-border-width: 1;
+	-fx-color: rgb(29, 94, 201);
+	-fx-background-color: #FFEBCD;
+}
+
+/* style for the text in the energy box */
+.energyLabel {
+	-fx-font: 16px "fantasy";
+	/*-fx-border-color: rgb(29, 94, 201);*/
+	/*-fx-border-style: dashed;*/
+	/*-fx-border-width: 1;*/
+}
+
+/* style for the text in the hex itself (displaying the game state) */
+.gamestate {
+	-fx-font: italic 20px "fantasy";
 }
 
 /* style for the game pane */
@@ -34,7 +47,7 @@ root{
     -fx-border-radius: 5;
     -fx-padding: 3 6 6 6;
 
-        -fx-font: 16px "Serif";
+    -fx-font: 16px "Serif";
     -fx-padding: 10;
     -fx-background-color: #CCFF99;
 }
