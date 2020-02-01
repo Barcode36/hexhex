@@ -2,7 +2,9 @@ package de.rjo.hex;
 
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Stream;
 
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Polygon;
@@ -77,9 +79,20 @@ public class Hexagon extends Polygon {
 		list.add(new GridCoordinate(gridCoordinates.getRow() + offsetX, gridCoordinates.getColumn() + offsetY));
 	    }
 	}
-	System.out.println("me: " + gridCoordinates + ", neighbours: " + list);
+//	System.out.println("me: " + gridCoordinates + ", neighbours: " + list);
 
 	return list.toArray(new GridCoordinate[0]);
+    }
+
+    /**
+     * return all neighbours as a stream of GridCoordinate objects.
+     *
+     * @param maxRows maximum nbr of Rows
+     * @param maxCols maximum nbr of Columns
+     * @return the coordinates of the neighbours as a stream
+     */
+    public Stream<GridCoordinate> streamNeighbours(final int maxRows, final int maxCols) {
+	return Arrays.stream(getNeighbours(maxRows, maxCols));
     }
 
     /**

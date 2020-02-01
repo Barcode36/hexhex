@@ -5,7 +5,7 @@ public class GridCoordinate {
     private int row;
     private int column;
 
-    GridCoordinate(int row, int column) {
+    public GridCoordinate(int row, int column) {
 	this.row = row;
 	this.column = column;
     }

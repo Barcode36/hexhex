@@ -2,6 +2,7 @@ package de.rjo.game;
 
 import java.util.Arrays;
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
 import de.rjo.hex.Arrow;
@@ -49,27 +50,29 @@ public class Game {
 
     private static interface Rules {
 	int ENERGY_TO_MOVE_ONE_UNIT = 5; // how much energy is required to move one unit one hex
-	int ENERGY_GAINED_PER_OCCUPIED_HEX = 10; // how much energy is gained per occupied hex (at end of round)
+	int ENERGY_GAINED_PER_OCCUPIED_HEX = 6; // how much energy is gained per occupied hex (at end of round)
+	int BONUS_FRIENDLY_NEIGHBOUR = 2; // bonus for each friendly neighbour
+	int PENALTY_ENEMY_NEIGHBOUR = 2; // penalty for each enemy neighbour
     }
 
-    public Game(int nbrRows, int nbrCols, Pane pane) {
-	state = new GameState[nbrRows][nbrCols];
-	for (int row = 0; row < nbrRows; row++) {
-	    for (int col = 0; col < nbrCols; col++) {
-		state[row][col] = new GameState();
+    public Game(Pane pane) {
+	state = new GameState[GameProperties.NBR_ROWS][GameProperties.NBR_COLS];
+	for (int row = 0; row < GameProperties.NBR_ROWS; row++) {
+	    for (int col = 0; col < GameProperties.NBR_COLS; col++) {
+		state[row][col] = new GameState(row, col);
 	    }
 	}
 	// choose a number of different hexs for each team with varying number of team
 	// members in each hex
 	Random rnd = new Random();
-	var maxHexes = nbrRows * nbrCols;
+	var maxHexes = GameProperties.NBR_ROWS * GameProperties.NBR_COLS;
 
 	for (Team team : new Team[] { Team.BLUE, Team.RED }) {
 	    var hexesChosen = 0;
 	    while (hexesChosen != GameProperties.instance().getPropertyInt(GameProperties.NBR_START_HEXES)) {
 		var chosenHex = rnd.nextInt(maxHexes);
-		var x = chosenHex / nbrCols;
-		var y = chosenHex % nbrCols;
+		var x = chosenHex / GameProperties.NBR_COLS;
+		var y = chosenHex % GameProperties.NBR_COLS;
 //		System.out.println(chosenHex + " " + x + "   " + y);
 		if (state[x][y].isEmpty()) {
 		    state[x][y].setUnits(team,
@@ -152,7 +155,9 @@ public class Game {
 	}
 	infoText.set("");
 	changePlayerToMove();
-	nextRound();
+	if (playerToMove == Team.BLUE) {
+	    endOfRound();
+	}
     }
 
     public GameState[][] getState() {
@@ -172,21 +177,40 @@ public class Game {
 	return lineToNeighbour;
     }
 
-    private void nextRound() {
-	if (playerToMove == Team.BLUE) {
-	    roundNbr.set(roundNbr.get() + 1); // add(1) doesn't work as expected
-	    boostEnergyLevels();
-	}
+    private void endOfRound() {
+	roundNbr.set(roundNbr.get() + 1); // add(1) doesn't work as expected
+	boostEnergyLevels();
     }
 
     private void boostEnergyLevels() {
 	// new energy levels are calulated at the end of each round
 	String info = "";
 	for (Team team : new Team[] { Team.BLUE, Team.RED }) {
-	    var energyGained = streamGameState().filter(hex -> hex.getTeam() == team).count()
-		    * Rules.ENERGY_GAINED_PER_OCCUPIED_HEX;
-	    energy[team.ordinal()].increase((int) energyGained);
-	    info += " +" + energyGained + " for team " + team.getName() + ";";
+	    AtomicInteger totalEnergyGained = new AtomicInteger(0);
+	    streamGameState().filter(hex -> hex.getTeam() == team).forEach(gamestate -> {
+		AtomicInteger friendlyNeighbours = new AtomicInteger(0);
+		AtomicInteger enemyNeighbours = new AtomicInteger(0);
+		gamestate.streamNeighbours(board, GameProperties.NBR_ROWS, GameProperties.NBR_COLS).forEach(hex -> {
+		    var teamOccupyingHex = state[hex.getRow()][hex.getColumn()].getTeam();
+		    if (teamOccupyingHex != Team.NOT_SET) {
+			if (teamOccupyingHex == team) {
+			    friendlyNeighbours.incrementAndGet();
+			} else {
+			    enemyNeighbours.incrementAndGet();
+			}
+		    }
+		});
+		AtomicInteger energyGained = new AtomicInteger(
+			Rules.ENERGY_GAINED_PER_OCCUPIED_HEX + friendlyNeighbours.get() * Rules.BONUS_FRIENDLY_NEIGHBOUR
+				- enemyNeighbours.get() * Rules.PENALTY_ENEMY_NEIGHBOUR);
+		System.out.println(
+			"team " + team + " energyGained: " + energyGained.get() + " for " + gamestate.getCoordinates()
+				+ " got friendly: " + friendlyNeighbours.get() + " enemy: " + enemyNeighbours.get());
+		totalEnergyGained.addAndGet(energyGained.get());
+	    });
+
+	    energy[team.ordinal()].increase(totalEnergyGained.get());
+	    info += " +" + totalEnergyGained.get() + " for team " + team.getName() + ";";
 	}
 	infoText.set(info);
     }
@@ -201,9 +225,7 @@ public class Game {
 
     public void setCurrentlySelected(Hexagon currentlySelected) {
 	this.currentlySelected = currentlySelected;
-	this.neighbours = currentlySelected.getNeighbours(
-		GameProperties.instance().getPropertyInt(GameProperties.NBR_ROWS),
-		GameProperties.instance().getPropertyInt(GameProperties.NBR_COLS));
+	this.neighbours = currentlySelected.getNeighbours(GameProperties.NBR_ROWS, GameProperties.NBR_COLS);
     }
 
     public Hexagon getCurrentlySelected() {

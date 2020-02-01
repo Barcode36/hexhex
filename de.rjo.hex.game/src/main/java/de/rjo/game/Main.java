@@ -37,8 +37,8 @@ public class Main extends Application {
 	initBoard();
 	game.setBoard(board);
 
-	for (int row = 0; row < GameProperties.instance().getPropertyInt(GameProperties.NBR_ROWS); row++) {
-	    for (int col = 0; col < GameProperties.instance().getPropertyInt(GameProperties.NBR_COLS); col++) {
+	for (int row = 0; row < GameProperties.NBR_ROWS; row++) {
+	    for (int col = 0; col < GameProperties.NBR_COLS; col++) {
 		game.getState()[row][col].getLabel().setLayoutX(board[row][col].getPointAtNorthWest().x + 10);
 		game.getState()[row][col].getLabel().setLayoutY(board[row][col].getPointAtNorthWest().y);
 
@@ -75,16 +75,14 @@ public class Main extends Application {
     }
 
     private void initGame(Pane pane) {
-	game = new Game(GameProperties.instance().getPropertyInt(GameProperties.NBR_ROWS),
-		GameProperties.instance().getPropertyInt(GameProperties.NBR_COLS), pane);
+	game = new Game(pane);
     }
 
     private void initBoard() {
-	board = new Hexagon[GameProperties.instance().getPropertyInt(GameProperties.NBR_ROWS)][GameProperties.instance()
-		.getPropertyInt(GameProperties.NBR_COLS)];
+	board = new Hexagon[GameProperties.NBR_ROWS][GameProperties.NBR_COLS];
 
-	for (int row = 0; row < GameProperties.instance().getPropertyInt(GameProperties.NBR_ROWS); row++) {
-	    for (int col = 0; col < GameProperties.instance().getPropertyInt(GameProperties.NBR_COLS); col++) {
+	for (int row = 0; row < GameProperties.NBR_ROWS; row++) {
+	    for (int col = 0; col < GameProperties.NBR_COLS; col++) {
 		board[row][col] = new Hexagon(row, col, game.getState()[row][col].getTeam().getStyleClass());
 
 		board[row][col].setOnMouseClicked(mevt -> {

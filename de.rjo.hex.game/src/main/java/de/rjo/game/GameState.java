@@ -1,5 +1,8 @@
 package de.rjo.game;
 
+import java.util.stream.Stream;
+
+import de.rjo.hex.GridCoordinate;
 import de.rjo.hex.Hexagon;
 import javafx.beans.binding.StringBinding;
 import javafx.beans.property.IntegerProperty;
@@ -10,10 +13,11 @@ import javafx.scene.control.Label;
 public class GameState {
 
     private Team team = Team.NOT_SET;
-    private IntegerProperty nbrUnits = new SimpleIntegerProperty(0);
-    private Label label; // this display the info in the hexagon itself
+    private final IntegerProperty nbrUnits = new SimpleIntegerProperty(0);
+    private final Label label; // this display the info in the hexagon itself
+    private final GridCoordinate coordinates;
 
-    public GameState() {
+    public GameState(int row, int col) {
 	label = new Label("");
 	label.getStyleClass().add("gamestate");
 	// need a special binding, since nbrUnits should not be displayed if zero
@@ -28,6 +32,25 @@ public class GameState {
 	    }
 	};
 	label.textProperty().bind(sb);
+	this.coordinates = new GridCoordinate(row, col);
+    }
+
+    /**
+     * return all neighbours as a stream of GridCoordinate objects.
+     *
+     * (Convenience method, delegates to the given 'board'.
+     *
+     * @param board   the hex board
+     * @param maxRows maximum nbr of Rows
+     * @param maxCols maximum nbr of Columns
+     * @return the coordinates of the neighbours as a stream
+     */
+    public Stream<GridCoordinate> streamNeighbours(final Hexagon[][] board, final int maxRows, final int maxCols) {
+	return board[coordinates.getRow()][coordinates.getColumn()].streamNeighbours(maxRows, maxCols);
+    }
+
+    public GridCoordinate getCoordinates() {
+	return coordinates;
     }
 
     public boolean isEmpty() {
