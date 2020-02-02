@@ -1,5 +1,8 @@
 package de.rjo.game;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public enum Team {
 
     BLUE("blue", "team-blue"), RED("red", "team-red"), NOT_SET("n/a", "team-notset");
@@ -18,5 +21,13 @@ public enum Team {
 
     public String getName() {
 	return name;
+    }
+
+    public static List<String> getAllStyles() {
+	List<String> styles = new ArrayList<>();
+	for (Team t : values()) {
+	    styles.add(t.getStyleClass());
+	}
+	return styles;
     }
 }

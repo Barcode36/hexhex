@@ -56,13 +56,28 @@ root{
 .team-notset {
 	-fx-fill: #FFFFFF;
 }
+
+
 .team-blue {
-	-fx-fill: #ADD8E6;
+	-fx-fill:  #ADD8E6;
+	/* for the colour of the progress bar: https://stackoverflow.com/questions/13357077/javafx-progressbar-how-to-change-bar-color/13372086#13372086 */
+	-fx-accent: #ADD8E6;
 }
 
 .team-red {
 	-fx-fill: rgb(220, 29, 29);
+	-fx-accent: rgb(220, 29, 29);
 }
+
+/*
+ * Doesn't seem to work if the styles are defined like this:
+.progress-bar .team-blue {
+	-fx-accent: #ADD8E6;
+}
+.progress-bar .team-red {
+    -fx-accent: rgb(220, 29, 29);
+}
+ */
 
 /* when mouse hovers over hex */
 .entered {

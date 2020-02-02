@@ -17,15 +17,16 @@ public class GameProperties extends Properties {
     public static final String MAIN_PANE_WIDTH = "mainpane_width";
     public static final String MAIN_PANE_HEIGHT = "mainpane_height";
 
-    public final static String NBR_ROWS_PARAM = "nbrRows";
-    public final static String NBR_COLS_PARAM = "nbrCols";
+    // the values for NBR_ROWS and NBR_COLS are read at startup
+    private final static String NBR_ROWS_PARAM = "nbrRows";
+    private final static String NBR_COLS_PARAM = "nbrCols";
 
-    // the values of NBR_ROWS and NBR_COLS are read at startup and stored here
     public final static int NBR_ROWS;
     public final static int NBR_COLS;
 
     public static final String NBR_START_HEXES = "nbrStartHexes";
     public static final String MAX_UNITS_IN_HEX = "maxUnitsInHex";
+    public static final String NBR_MOVES_PER_ROUND = "nbrMovesPerRound";
 
     public static final String INITIAL_ENERGY = "initialEnergy";
 

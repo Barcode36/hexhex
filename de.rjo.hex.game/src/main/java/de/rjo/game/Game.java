@@ -10,7 +10,9 @@ import de.rjo.hex.GridCoordinate;
 import de.rjo.hex.Hexagon;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.scene.Group;
@@ -32,6 +34,7 @@ public class Game {
     private static final String INFO_NOT_ENOUGH_UNITS = "not enough units";
     private static final String INFO_WRONG_TEAM = "wrong team, cannot move there";
     private static final String INFO_NOT_ENOUGH_ENERGY = "not enough energy";
+    private static final String INFO_NO_MOVES_LEFT = "no moves left";
 
     private GameState[][] state;
     private Hexagon[][] board;
@@ -42,7 +45,9 @@ public class Game {
     private StringProperty infoText;
 
     private Rectangle playerToMoveRectangle;
-    private Team playerToMove;
+    private IntegerProperty nbrMovesAvaliableInRound; // number of moves that a player can still make in this round
+
+    private ObjectProperty<Team> playerToMove;
     private Hexagon currentlySelected; // hex that has been clicked
     private Hexagon currentlyHoveredNeighbour; // which neighbour is currently being hovered over
     private GridCoordinate[] neighbours;
@@ -86,10 +91,12 @@ public class Game {
 
 	lineToNeighbour = new Arrow();
 
-	playerToMove = Team.BLUE;
+	playerToMove = new SimpleObjectProperty<Team>(Team.BLUE);
+	nbrMovesAvaliableInRound = new SimpleIntegerProperty(
+		GameProperties.instance().getPropertyInt(GameProperties.NBR_MOVES_PER_ROUND));
 
 	playerToMoveRectangle = new Rectangle(80, 20);
-	setPlayerToMoveStyle(playerToMove);
+	setPlayerToMoveStyle(playerToMove.get());
 
 	var playerToMoveLabel = new Label("player to move");
 	Group playerToMoveGroup = new Group(playerToMoveRectangle, playerToMoveLabel);
@@ -134,10 +141,14 @@ public class Game {
 	var infoLabel = new Label();
 	infoLabel.textProperty().bind(infoText);
 
+	var nbrMovesIndicator = new MoveProgressBar(playerToMove, nbrMovesAvaliableInRound,
+		GameProperties.instance().getPropertyInt(GameProperties.NBR_MOVES_PER_ROUND));
+
 	playerGridPane.add(roundinfoBox, 0, 0);
 	playerGridPane.add(energyGridPane, 1, 0);
-	playerGridPane.add(endOfGoButton, 2, 0);
-	playerGridPane.add(infoLabel, 3, 0);
+	playerGridPane.add(nbrMovesIndicator, 2, 0);
+	playerGridPane.add(endOfGoButton, 3, 0);
+	playerGridPane.add(infoLabel, 4, 0);
 
 	// adding lineToNeighbour here (instead of via Main) means the arrow/line does
 	// not get displayed!?
@@ -155,7 +166,7 @@ public class Game {
 	}
 	infoText.set("");
 	changePlayerToMove();
-	if (playerToMove == Team.BLUE) {
+	if (playerToMove.get() == Team.BLUE) {
 	    endOfRound();
 	}
     }
@@ -165,12 +176,13 @@ public class Game {
     }
 
     private void changePlayerToMove() {
-	if (playerToMove == Team.BLUE) {
-	    playerToMove = Team.RED;
+	if (playerToMove.get() == Team.BLUE) {
+	    playerToMove.set(Team.RED);
 	} else {
-	    playerToMove = Team.BLUE;
+	    playerToMove.set(Team.BLUE);
 	}
-	setPlayerToMoveStyle(playerToMove);
+	nbrMovesAvaliableInRound.set(GameProperties.instance().getPropertyInt(GameProperties.NBR_MOVES_PER_ROUND));
+	setPlayerToMoveStyle(playerToMove.get());
     }
 
     public Arrow getLineToNeighbour() {
@@ -270,9 +282,6 @@ public class Game {
 	if ((nbr != 0) && (currentlyHoveredNeighbour != null)) {
 	    moveToNeighbour(currentlySelected, currentlyHoveredNeighbour, nbr);
 	}
-//	if (posn != null) {
-//	    move(posn);
-//	}
     }
 
     // moves the given number from originHex to the targetHex (neighbour)
@@ -283,39 +292,31 @@ public class Game {
 	// check if move allowed
 	if (!originState.canMoveFrom(nbrUnits)) {
 	    infoText.set(INFO_NOT_ENOUGH_UNITS);
-	} else if (!targetState.canMoveTo(playerToMove)) {
+	} else if (!targetState.canMoveTo(playerToMove.get())) {
 	    infoText.set(INFO_WRONG_TEAM);
+	} else if (nbrMovesAvaliableInRound.get() == 0) {
+	    infoText.set(INFO_NO_MOVES_LEFT);
 	} else {
 	    var energyRequired = Rules.ENERGY_TO_MOVE_ONE_UNIT * nbrUnits;
-	    if (energyRequired > energy[playerToMove.ordinal()].getEnergy().get()) {
+	    if (energyRequired > energy[playerToMove.get().ordinal()].getEnergy().get()) {
 		infoText.set(INFO_NOT_ENOUGH_ENERGY);
 	    } else {
 		originState.decrement(originHex, nbrUnits);
 
 		if (targetState.isEmpty()) {
-		    targetState.setUnits(playerToMove, nbrUnits);
-		    targetHex.setStyleClass(playerToMove.getStyleClass());
+		    targetState.setUnits(playerToMove.get(), nbrUnits);
+		    targetHex.setStyleClass(playerToMove.get().getStyleClass());
 		} else {
 		    targetState.increment(nbrUnits);
 		}
 
 		deselectHex(originHex);
 		infoText.set("");
-		energy[playerToMove.ordinal()].reduce(energyRequired);
+		energy[playerToMove.get().ordinal()].reduce(energyRequired);
+		nbrMovesAvaliableInRound.set(nbrMovesAvaliableInRound.get() - 1);
 	    }
 	}
     }
-
-//    // called when user has indicated which direction he wants to move in
-//    public void move(Direction posn) {
-//	if (currentlySelected == null) {
-//	    return;
-//	}
-//	var x = currentlySelected.getGridCoordinates().getRow();
-//	var y = currentlySelected.getGridCoordinates().getColumn();
-//
-//	state[x][y].decrement(currentlySelected);
-//    }
 
     public void onMouseEntered(Hexagon hex) {
 	// if no hex as yet selected, colour it differently
@@ -359,8 +360,8 @@ public class Game {
 	    deselectHex(hex);
 	} else {
 	    // can only select a hex belonging to the current player.
-	    if (state[hex.getGridCoordinates().getRow()][hex.getGridCoordinates().getColumn()]
-		    .getTeam() == playerToMove) {
+	    if (state[hex.getGridCoordinates().getRow()][hex.getGridCoordinates().getColumn()].getTeam() == playerToMove
+		    .get()) {
 		if (currentlySelected != null) {
 		    currentlySelected.resetColour();
 		}
