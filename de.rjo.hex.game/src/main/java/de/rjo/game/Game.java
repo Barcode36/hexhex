@@ -15,14 +15,12 @@ import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
-import javafx.scene.Group;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
-import javafx.scene.shape.Rectangle;
 
 public class Game {
 
@@ -44,10 +42,8 @@ public class Game {
     private Energy[] energy;
     private StringProperty infoText;
 
-    private Rectangle playerToMoveRectangle;
     private IntegerProperty nbrMovesAvaliableInRound; // number of moves that a player can still make in this round
-
-    private ObjectProperty<Team> playerToMove;
+    private ObjectProperty<Team> playerToMove; // which player is currently moving
     private Hexagon currentlySelected; // hex that has been clicked
     private Hexagon currentlyHoveredNeighbour; // which neighbour is currently being hovered over
     private GridCoordinate[] neighbours;
@@ -95,12 +91,6 @@ public class Game {
 	nbrMovesAvaliableInRound = new SimpleIntegerProperty(
 		GameProperties.instance().getPropertyInt(GameProperties.NBR_MOVES_PER_ROUND));
 
-	playerToMoveRectangle = new Rectangle(80, 20);
-	setPlayerToMoveStyle(playerToMove.get());
-
-	var playerToMoveLabel = new Label("player to move");
-	Group playerToMoveGroup = new Group(playerToMoveRectangle, playerToMoveLabel);
-
 	var endOfGoButton = new Button("end of go");
 	endOfGoButton.setOnMouseClicked(evt -> doEndOfGo());
 
@@ -134,7 +124,7 @@ public class Game {
 	playerGridPane.setLayoutY(20);
 	playerGridPane.setHgap(5);
 
-	VBox roundinfoBox = new VBox(roundNbrLabel, playerToMoveGroup, scoreLabel);
+	VBox roundinfoBox = new VBox(roundNbrLabel, scoreLabel);
 	roundinfoBox.getStyleClass().add("infoBox");
 
 	infoText = new SimpleStringProperty("");
@@ -153,11 +143,6 @@ public class Game {
 	// adding lineToNeighbour here (instead of via Main) means the arrow/line does
 	// not get displayed!?
 	pane.getChildren().addAll(/* lineToNeighbour, */ playerGridPane);
-    }
-
-    private void setPlayerToMoveStyle(Team playerToMove) {
-	playerToMoveRectangle.getStyleClass().clear();
-	playerToMoveRectangle.getStyleClass().add(playerToMove.getStyleClass());
     }
 
     private void doEndOfGo() {
@@ -182,7 +167,6 @@ public class Game {
 	    playerToMove.set(Team.BLUE);
 	}
 	nbrMovesAvaliableInRound.set(GameProperties.instance().getPropertyInt(GameProperties.NBR_MOVES_PER_ROUND));
-	setPlayerToMoveStyle(playerToMove.get());
     }
 
     public Arrow getLineToNeighbour() {
@@ -225,10 +209,6 @@ public class Game {
 	    info += " +" + totalEnergyGained.get() + " for team " + team.getName() + ";";
 	}
 	infoText.set(info);
-    }
-
-    private Stream<Hexagon> streamBoardHexagons() {
-	return Arrays.stream(board).flatMap(Arrays::stream);
     }
 
     private Stream<GameState> streamGameState() {
