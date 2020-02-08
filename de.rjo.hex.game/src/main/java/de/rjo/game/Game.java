@@ -54,6 +54,7 @@ public class Game {
 	int ENERGY_GAINED_PER_OCCUPIED_HEX = 6; // how much energy is gained per occupied hex (at end of round)
 	int BONUS_FRIENDLY_NEIGHBOUR = 2; // bonus for each friendly neighbour
 	int PENALTY_ENEMY_NEIGHBOUR = 2; // penalty for each enemy neighbour
+	int NBR_FRIENDLY_NEIGHBOURS_FOR_BONUS = 2; // extra units with (at least) this number of friendly neighbours
     }
 
     public Game(Pane pane) {
@@ -176,33 +177,41 @@ public class Game {
     private void endOfRound() {
 	roundNbr.set(roundNbr.get() + 1); // add(1) doesn't work as expected
 	boostEnergyLevels();
+	addToArmies();
     }
 
+    private long countNeighbours(GameState gamestate, Team requiredTeam) {
+	return gamestate.streamNeighbours(board, GameProperties.NBR_ROWS, GameProperties.NBR_COLS)
+		.filter(neighbour -> state[neighbour.getRow()][neighbour.getColumn()].getTeam() == requiredTeam)
+		.count();
+    }
+
+    // hex's with at least two neighbours get a bonus of 1
+    private void addToArmies() {
+	for (Team team : new Team[] { Team.BLUE, Team.RED }) {
+	    streamGameState().filter(hex -> hex.getTeam() == team).forEach(gamestate -> {
+		long friendlyNeighbours = countNeighbours(gamestate, team);
+		gamestate.increment((int) (friendlyNeighbours / Rules.NBR_FRIENDLY_NEIGHBOURS_FOR_BONUS));
+	    });
+	}
+    }
+
+    // new energy levels are calulated at the end of each round
     private void boostEnergyLevels() {
-	// new energy levels are calulated at the end of each round
 	String info = "";
 	for (Team team : new Team[] { Team.BLUE, Team.RED }) {
 	    AtomicInteger totalEnergyGained = new AtomicInteger(0);
 	    streamGameState().filter(hex -> hex.getTeam() == team).forEach(gamestate -> {
-		AtomicInteger friendlyNeighbours = new AtomicInteger(0);
-		AtomicInteger enemyNeighbours = new AtomicInteger(0);
-		gamestate.streamNeighbours(board, GameProperties.NBR_ROWS, GameProperties.NBR_COLS).forEach(hex -> {
-		    var teamOccupyingHex = state[hex.getRow()][hex.getColumn()].getTeam();
-		    if (teamOccupyingHex != Team.NOT_SET) {
-			if (teamOccupyingHex == team) {
-			    friendlyNeighbours.incrementAndGet();
-			} else {
-			    enemyNeighbours.incrementAndGet();
-			}
-		    }
-		});
-		AtomicInteger energyGained = new AtomicInteger(
-			Rules.ENERGY_GAINED_PER_OCCUPIED_HEX + friendlyNeighbours.get() * Rules.BONUS_FRIENDLY_NEIGHBOUR
-				- enemyNeighbours.get() * Rules.PENALTY_ENEMY_NEIGHBOUR);
+		long friendlyNeighbours = countNeighbours(gamestate, team);
+		long enemyNeighbours = countNeighbours(gamestate, team.getOpponent());
+
+		long energyGained = Rules.ENERGY_GAINED_PER_OCCUPIED_HEX
+			+ friendlyNeighbours * Rules.BONUS_FRIENDLY_NEIGHBOUR
+			- enemyNeighbours * Rules.PENALTY_ENEMY_NEIGHBOUR;
 		System.out.println(
-			"team " + team + " energyGained: " + energyGained.get() + " for " + gamestate.getCoordinates()
-				+ " got friendly: " + friendlyNeighbours.get() + " enemy: " + enemyNeighbours.get());
-		totalEnergyGained.addAndGet(energyGained.get());
+			"team " + team + " energyGained: " + energyGained + " for " + gamestate.getCoordinates()
+				+ " got friendly: " + friendlyNeighbours + " enemy: " + enemyNeighbours);
+		totalEnergyGained.addAndGet((int) energyGained);
 	    });
 
 	    energy[team.ordinal()].increase(totalEnergyGained.get());

@@ -30,4 +30,18 @@ public enum Team {
 	}
 	return styles;
     }
+
+    /**
+     * @return the opponent of this team
+     */
+    public Team getOpponent() {
+	switch (this) {
+	case BLUE:
+	    return RED;
+	case RED:
+	    return BLUE;
+	default:
+	    return NOT_SET;
+	}
+    }
 }
