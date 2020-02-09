@@ -8,6 +8,8 @@ import java.util.stream.Stream;
 import de.rjo.hex.Arrow;
 import de.rjo.hex.GridCoordinate;
 import de.rjo.hex.Hexagon;
+import javafx.animation.Animation;
+import javafx.animation.FadeTransition;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.ObjectProperty;
@@ -21,6 +23,7 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
+import javafx.util.Duration;
 
 public class Game {
 
@@ -48,6 +51,7 @@ public class Game {
     private Hexagon currentlyHoveredNeighbour; // which neighbour is currently being hovered over
     private GridCoordinate[] neighbours;
     private Arrow lineToNeighbour;
+    private AnimatedButton endOfGoButton;
 
     private static interface Rules {
 	int ENERGY_TO_MOVE_ONE_UNIT = 5; // how much energy is required to move one unit one hex
@@ -92,7 +96,11 @@ public class Game {
 	nbrMovesAvaliableInRound = new SimpleIntegerProperty(
 		GameProperties.instance().getPropertyInt(GameProperties.NBR_MOVES_PER_ROUND));
 
-	var endOfGoButton = new Button("end of go");
+	var endOfGoFadeTransition = new FadeTransition(Duration.seconds(0.7));
+	endOfGoFadeTransition.setFromValue(1.0);
+	endOfGoFadeTransition.setToValue(0.0);
+	endOfGoFadeTransition.setCycleCount(Animation.INDEFINITE);
+	endOfGoButton = new AnimatedButton("end of go", endOfGoFadeTransition);
 	endOfGoButton.setOnMouseClicked(evt -> doEndOfGo());
 
 	roundNbr = new SimpleIntegerProperty(1);
@@ -146,7 +154,10 @@ public class Game {
 	pane.getChildren().addAll(/* lineToNeighbour, */ playerGridPane);
     }
 
+    // called when the end-of-go button is pressed
     private void doEndOfGo() {
+	endOfGoButton.stopFadeTransition();
+
 	if (currentlySelected != null) {
 	    onMouseClicked(currentlySelected);// deselect the current hex
 	}
@@ -303,6 +314,10 @@ public class Game {
 		infoText.set("");
 		energy[playerToMove.get().ordinal()].reduce(energyRequired);
 		nbrMovesAvaliableInRound.set(nbrMovesAvaliableInRound.get() - 1);
+
+		if (nbrMovesAvaliableInRound.get() == 0) {
+		    endOfGoButton.playFadeTransition();
+		}
 	    }
 	}
     }
@@ -371,6 +386,25 @@ public class Game {
 
     public void setBoard(Hexagon[][] board) {
 	this.board = board;
+    }
+
+    private class AnimatedButton extends Button {
+	private FadeTransition fadeTransition;
+
+	public AnimatedButton(String text, FadeTransition fadeTransition) {
+	    super(text);
+	    this.fadeTransition = fadeTransition;
+	    this.fadeTransition.setNode(this);
+	}
+
+	public void playFadeTransition() {
+	    this.fadeTransition.play();
+	}
+
+	public void stopFadeTransition() {
+	    this.fadeTransition.stop();
+	    setOpacity(1.0); // make sure displayed correctly regardless of animation status
+	}
     }
 
 }
